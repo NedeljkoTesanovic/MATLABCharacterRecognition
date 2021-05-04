@@ -1,2 +1,1 @@
-# MFiAMS
-Methods of Forming and Analysing Medical Images
+A MATLAB Guide application that allows for optical character recognition (Target: Automobile Licence Plates)
