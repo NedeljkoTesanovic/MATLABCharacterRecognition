@@ -22,7 +22,7 @@ function varargout = mainWindow(varargin)
 
 % Edit the above text to modify the response to help mainWindow
 
-% Last Modified by GUIDE v2.5 05-May-2021 07:58:52
+% Last Modified by GUIDE v2.5 15-May-2021 21:46:24
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -84,6 +84,7 @@ try
     fullPath = append(folderPath, fileName);
     img = imread(fullPath);
     axes(handles.axes_Preview);
+    img = im2gray(img);
     imshow(img);
 catch
     msgbox("No image loaded!");
@@ -95,34 +96,28 @@ function pushbutton_Filter_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Filter (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-if get(handles.radiobutton_Blur, 'Value') == 1
-    try
-        imgp = imgaussfilt(img, 2);
-        imshowpair(img, imgp);
-        if questdlg("Apply results?") == "Yes"
-            img = imgp;
-        end
-    catch
-           msgbox("Error applying filter!");
-    end     
-elseif get(handles.radiobutton_Sharpen, 'Value') == 1
+global img
+if get(handles.radiobutton_Sharpen, 'Value') == 1
     try
     imgp = imsharpen(img);
+    axes(handles.axes_Preview);
     imshowpair(img, imgp);
     if questdlg("Apply results?") == "Yes"
         img = imgp;
     end
+    imshow(img);
    catch
        msgbox("Error applying filter!");
    end 
 else %Apply median filter
    try
     imgp = medfilt2(img);
+    axes(handles.axes_Preview);
     imshowpair(img, imgp);
     if questdlg("Apply results?") == "Yes"
         img = imgp;
     end
+    imshow(img);
    catch
        msgbox("Error applying filter!");
    end 
@@ -158,15 +153,6 @@ function radiobutton_Gaussian_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of radiobutton_Gaussian
 
 
-% --- Executes on button press in radiobutton_Blur.
-function radiobutton_Blur_Callback(hObject, eventdata, handles)
-% hObject    handle to radiobutton_Blur (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of radiobutton_Blur
-
-
 % --- Executes on button press in radiobutton_Sharpen.
 function radiobutton_Sharpen_Callback(hObject, eventdata, handles)
 % hObject    handle to radiobutton_Sharpen (see GCBO)
@@ -174,3 +160,26 @@ function radiobutton_Sharpen_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of radiobutton_Sharpen
+
+
+
+function textbox_mod_Callback(hObject, eventdata, handles)
+% hObject    handle to textbox_mod (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of textbox_mod as text
+%        str2double(get(hObject,'String')) returns contents of textbox_mod as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function textbox_mod_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to textbox_mod (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
