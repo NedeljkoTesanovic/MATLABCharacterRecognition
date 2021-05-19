@@ -47,10 +47,12 @@ figure('name', "Prelazi po redovima")
 plot(edges)
 risingEdges = [find(edges == 1)]
 fallingEdges = [find(edges == -1)]
-%if risingEdges(1)>fallingEdges(1) %Zastita od okvira
-%    risingEdges = [1;risingEdges]
-%    fallingEdges = [fallingEdges;length(edges)]
-%end
+if risingEdges(1)>fallingEdges(1) %Zastita od belog okvira
+    risingEdges = [1;risingEdges]
+   fallingEdges = [fallingEdges;length(edges)]
+elseif risingEdges(end)>fallingEdges(end)
+    fallingEdges = [fallingEdges; length(edges)]
+end
 width = fallingEdges - risingEdges
 [~, widest] = max(width)
 %%
@@ -66,7 +68,6 @@ imshow(ROI)
 %Princip je isti kao za ROI, samo sto umjesto redova koristimo kolone
 %(slova ce biti veliki zbir belih piksela)
 whiteColumns = sum(ROI,1);
-%whiteColumns = whiteColumns - min(whiteColumns)
 imshow(ROI)
 hold on
 plot(max(whiteColumns) - whiteColumns, 'r')
@@ -74,26 +75,58 @@ xlabel('Kolona')
 ylabel('Koncentracija belih piksela')
 %%
 %Trazimo individualnih karaktera
-thresholdCharacter = 10
+thresholdCharacter = 5
 groups = whiteColumns > thresholdCharacter
 figure('name', "Koncentracija belog po kolonama")
-plot(whiteColumns)
+plot(whiteColumns/(max(whiteColumns)))
 hold on
-plot(groups*(max(whiteColumns)/2));
+plot(0.5*groups/max(groups));
 legend("Koncentracija belog", "Grupe");
-%%
-edges =  diff(groups);
+%% AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa
+%Prvi prelaz
+edges =  diff(groups)
 figure('name', "Prelaz po kolonama")
 plot(edges)
 risingEdges = [1 find(edges == 1)]
 fallingEdges = [find(edges == -1) length(edges)]
+
+if risingEdges(1)>fallingEdges(1) %Zastita od belog okvira
+    risingEdges = [1;risingEdges]
+   fallingEdges = [fallingEdges;length(edges)]
+elseif risingEdges(end)>fallingEdges(end)
+    fallingEdges = [fallingEdges; length(edges)]
+end
+
 groups  = fallingEdges - risingEdges
 avgWidth = mean(groups)
-groups = groups > avgWid
+
+undesirables = groups(groups < avgWidth)
+
+
+figure('name', "Koncentracija belog po kolonama")
+plot(whiteColumns/(max(whiteColumns)))
+hold on
+plot(0.5*groups/max(groups));
+legend("Koncentracija belog", "Grupe");
+%%
+%{
+%Drugi prelaz
+groups = groups(groups > avgWidth*0.75)
+risingEdges = risingEdges(groups > avgWidth*0.75)
+fallingEdges = fallingEdges(groups > avgWidth*0.75)
+figure('name', "Drugi prelaz po kolonama")
+groups  = fallingEdges - risingEdges
 %Slova su uniformna po standardima za fontove koji se koriste za registracijske tablice
 %Imajuci to u vidu, odbacujemo abnormalne sirine jer su to sumovi,
 %nepoznati karakteri ili prosto ivice tablice
 %width = width(width< avgWidth+(avgWidth/4) & width > avgWidth-(avgWidth/4))
+
+figure('name', "Koncentracija belog po kolonama")
+plot(whiteColumns/(max(whiteColumns)))
+hold on
+plot(0.5*groups/max(groups));
+legend("Koncentracija belog", "Grupe");
+%}
 %% Ucitavanje sablona karaktera
 %Da bi prepoznali karaktere, moramo da imamo reference, tj. sablon-slike (templates) kako ti sami karakteri izgledaju
 %Ucitavamo sablone iz foldera "templates" sadrzanog u direktorijimu
@@ -109,10 +142,11 @@ for i = 1:length(templates)
     candidateImg{i,2} = imread(fullfile(templates(i).folder, templates(i).name));
     imshow(candidateImg{i,2})
 end
+
 %%
 %Prikaz prvog karaktera i sablona
 
-letterImg = ROI(:,risingEdges(2):fallingEdges(2)+1);
+letterImg = ROI(:,risingEdges(2):fallingEdges(2));
 figure('name',"Izdvojeno prvo slovo");
 imshow(letterImg)
 
