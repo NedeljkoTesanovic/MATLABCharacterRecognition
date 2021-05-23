@@ -22,7 +22,7 @@ function varargout = mainWindow(varargin)
 
 % Edit the above text to modify the response to help mainWindow
 
-% Last Modified by GUIDE v2.5 15-May-2021 21:46:24
+% Last Modified by GUIDE v2.5 22-May-2021 23:18:55
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -58,6 +58,8 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
+set(handles.radiobutton_Sharpen, 'Value', 1);
+
 % UIWAIT makes mainWindow wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
@@ -91,9 +93,9 @@ catch
 end
 
 
-% --- Executes on button press in pushbutton_Filter.
-function pushbutton_Filter_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_Filter (see GCBO)
+% --- Executes on button press in pushbutton_Apply.
+function pushbutton_Apply_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Apply (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global img
@@ -122,9 +124,9 @@ else %Apply median filter
        msgbox("Error applying filter!");
    end 
 end
-% --- Executes on button press in pushbutton_Start.
-function pushbutton_Start_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_Start (see GCBO)
+% --- Executes on button press in pushbutton_Read.
+function pushbutton_Read_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Read (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -134,6 +136,84 @@ function uibuttongroup_Modification_SelectionChangedFcn(hObject, eventdata, hand
 % hObject    handle to the selected object in uibuttongroup_Modification 
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+switch get(eventdata.NewValue,'tag') 
+    case 'radiobutton_Sharpen'   
+        set(handles.edit_Passes, 'string', 1);
+        set(handles.edit_Param1, 'string', 1);
+        set(handles.edit_Param1,'visible','on');
+        set(handles.text_Param1, 'string', "Radius");
+        set(handles.text_Param1,'visible','on');
+        set(handles.edit_Param2, 'string', 0.8)
+        set(handles.edit_Param2,'visible','on');
+        set(handles.text_Param2,'string',"Amount");
+        set(handles.text_Param2,'visible','on');
+        set(handles.edit_Param3,'string',1);
+        set(handles.edit_Param3,'visible','on');
+        set(handles.text_Param3,'string', "Threshold");
+        set(handles.text_Param3,'visible','on');
+    case 'radiobutton_Median'     
+        set(handles.edit_Passes, 'string', 1)
+        set(handles.edit_Param1, 'string', 3);
+        set(handles.edit_Param1,'visible','on');
+        set(handles.text_Param1,'string', "Mask width");
+        set(handles.text_Param1,'visible','on');
+        set(handles.edit_Param2, 'string', 3);
+        set(handles.edit_Param2,'visible','on');
+        set(handles.text_Param2,'string', "Mask height");
+        set(handles.text_Param2,'visible','on');
+        set(handles.edit_Param3,'visible','off');
+        set(handles.text_Param3,'visible','off');
+   case 'radiobutton_Wiener'    
+        set(handles.edit_Passes, 'string', 1)
+        set(handles.edit_Param1, 'string', 3);
+        set(handles.edit_Param1,'visible','on');
+        set(handles.text_Param1,'string', "Mask width");
+        set(handles.text_Param1,'visible','on');
+        set(handles.edit_Param2, 'string', 3);
+        set(handles.edit_Param2,'visible','on');
+        set(handles.text_Param2,'string', "Mask height");
+        set(handles.text_Param2,'visible','on');
+        set(handles.edit_Param3,'visible','off');
+        set(handles.text_Param3,'visible','off');
+    case 'radiobutton_Contrast'
+        set(handles.edit_Passes, 'string', 1)
+        set(handles.edit_Param1, 'string', 0);
+        set(handles.edit_Param1,'visible','on');
+        set(handles.text_Param1,'string', "Threshold");
+        set(handles.text_Param1,'visible','on');
+        set(handles.edit_Param1, 'string', 255);
+        set(handles.edit_Param2,'visible','on');
+        set(handles.text_Param2,'string', "Upper boundary");
+        set(handles.text_Param2,'visible','on');
+        set(handles.edit_Param3,'string', 256);
+        set(handles.edit_Param3,'visible','on');
+        set(handles.text_Param3, 'string', "Resolution")
+        set(handles.text_Param3,'visible','on');
+    case 'radiobutton_Gaussian'
+        set(handles.edit_Passes, 'string', 1)
+        set(handles.edit_Param1, 'string', 3);
+        set(handles.edit_Param1,'visible','on');
+        set(handles.text_Param1,'string', "Mask width");
+        set(handles.text_Param1,'visible','on');
+        set(handles.edit_Param2, 'string', 3);
+        set(handles.edit_Param2,'visible','on');
+        set(handles.text_Param2,'string', "Mask height");
+        set(handles.text_Param2,'visible','on');
+        set(handles.edit_Param3,'visible','off');
+        set(handles.text_Param3,'visible','off');
+    otherwise %Salt and pepper noise selected
+        set(handles.edit_Passes, 'string', 1)
+        set(handles.edit_Param1,'visible','on');
+        set(handles.text_Param1,'string', "Mask width");
+        set(handles.text_Param1,'visible','on');
+        set(handles.edit_Param2,'visible','on');
+        set(handles.text_Param2,'string', "Mask height");
+        set(handles.text_Param2,'visible','on');
+        set(handles.edit_Param3,'visible','off');
+        set(handles.text_Param3,'visible','off');
+            
+end
 
 % --- Executes on button press in radiobutton_Median.
 function radiobutton_Median_Callback(hObject, eventdata, handles)
@@ -175,6 +255,203 @@ function textbox_mod_Callback(hObject, eventdata, handles)
 % --- Executes during object creation, after setting all properties.
 function textbox_mod_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to textbox_mod (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on slider movement.
+function slider1_Callback(hObject, eventdata, handles)
+% hObject    handle to slider1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+
+% --- Executes during object creation, after setting all properties.
+function slider1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to slider1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+
+function edit_Passes_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Passes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_Passes as text
+%        str2double(get(hObject,'String')) returns contents of edit_Passes as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Passes_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Passes (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_Param1_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Param1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_Param1 as text
+%        str2double(get(hObject,'String')) returns contents of edit_Param1 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Param1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Param1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_Param2_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Param2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_Param2 as text
+%        str2double(get(hObject,'String')) returns contents of edit_Param2 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Param2_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Param2 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_Param3_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Param3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_Param3 as text
+%        str2double(get(hObject,'String')) returns contents of edit_Param3 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Param3_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Param3 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton_Next.
+function pushbutton_Next_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Next (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton_Prev.
+function pushbutton_Prev_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Prev (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit_Param4_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Param4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_Param4 as text
+%        str2double(get(hObject,'String')) returns contents of edit_Param4 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Param4_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Param4 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_Param5_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Param5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_Param5 as text
+%        str2double(get(hObject,'String')) returns contents of edit_Param5 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Param5_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Param5 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_Param6_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_Param6 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_Param6 as text
+%        str2double(get(hObject,'String')) returns contents of edit_Param6 as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_Param6_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_Param6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

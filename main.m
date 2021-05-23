@@ -20,7 +20,8 @@ histogram(imgGray)
 %threshold =  100                           TODO: Opcionalni input sa GUIa
 threshold = graythresh(imgGray) %Otsuova metoda za odredjivanje praga binarizacije
 imgBW = imbinarize(imgGray, threshold)
-if sum(sum(imgBW(imgBW==1))) > size(imgBW,1)*size(imgBW,2)/2 %Posto radimo sa belim karakterima, u slucaju da se slika binarizuje na takav nacin da su karakteri crni, invertujemo je
+%if sum(sum(imgBW(imgBW==1))) > size(imgBW,1)*size(imgBW,2)/2 %Posto radimo sa belim karakterima, u slucaju da se slika binarizuje na takav nacin da su karakteri crni, invertujemo je
+if threshold > 0.5
     imgBW = ~imgBW;
 end
 figure('name',"Crno-bela slika")
@@ -41,7 +42,7 @@ grid on
 hold on
 axis tight
 %threshold2 = 110;                           TODO: Opcionalni input sa GUIa
-threshold2 = mean(whiteRows)*0.75
+threshold2 = mean(whiteRows)*0.5 %0.75
 groups = whiteRows > threshold2;
 plot(groups*(max(whiteRows)/2)) %Prikaz regija belih objekata
 legend("Broj belog", "Grupe");
@@ -72,7 +73,10 @@ ROIStart = risingEdges(widest)
 ROIEnd = fallingEdges(widest)
 
 ROI = imgBW(ROIStart:ROIEnd, :); 
+if sum(sum(ROI(ROI==1))) > size(ROI,1)*size(ROI,2)/2 %Posto radimo sa belim karakterima, u slucaju da se slika binarizuje na takav nacin da su karakteri crni, invertujemo je
 
+    ROI=~ROI;
+end
 figure('name',"Regija od interesovanja")
 imshow(ROI)
 %% Trazenje karaktera
@@ -135,18 +139,17 @@ for i = 1:length(templates)
     subplot(round(sqrt(length(templates)))+1,round(sqrt(length(templates))),i) %Za grid prikaz svih sablona
     [~, fileName] = fileparts(templates(i).name);
     candidateImg{i,1} = fileName;
-    candidateImg{i,2} = imread(fullfile(templates(i).folder, templates(i).name));
+    candidateImg{i,2} = imresize(im2bw(imread(fullfile(templates(i).folder, templates(i).name))), [40 20]);
     imshow(candidateImg{i,2})
 end
 
 %%
 %Prikaz prvog karaktera i sablona
-
-%if size(risingEdges)>1 & size(fallingEdges)>2 
- %   letterImg = ROI(:,risingEdges(2):fallingEdges(3));
-%else
-    letterImg = ROI(:, risingEdges(1):fallingEdges(1));
+    letterImg = ROI(:, risingEdges(3):fallingEdges(3));
+    figure
+    imshow(letterImg)  
 %end
+%%
 figure('name',"Izdvojen prvi karakter i prvi sablon");
 subplot(1,2,1)
 imshow(letterImg)
@@ -199,7 +202,6 @@ result = '';
 for i = 1:length(groups)
     if groups(i) > avgWidth * 0.66 %TODO Opcionalni Factor odbacivanja
         letterImg = ROI(:, risingEdges(i):fallingEdges(i));
-        width = fallingEdges(i) - risingEdges(i);
             difference = zeros(1,length(templates));
             for j = 1:length(templates)
                 letterImg = imresize(letterImg, size(candidateImg{j,2}));
@@ -216,13 +218,13 @@ for i = 1:length(groups)
             hold on
             title('Sablon', 'fontsize', 15)
             imshow(candidateImg{x,2})
-            if ~contains(chars, letter) %Ako imamo nepoznate karaktere ili sum, prikazacemo to posebnim simbolom
-                letter = ".";
+            if ~contains(chars, letter(1)) %Ako imamo nepoznate karaktere ili sum, prikazacemo to posebnim simbolom
+                letter = "-";
             end
-         result(end+1) = letter;   
+         result(end+1) = letter(1);   
     end
 end
 %% Procitani tekst:
 result
 disp("Registarska tablica: ")
-result(result~='.')
+result(result~='-')

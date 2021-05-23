@@ -5,7 +5,7 @@ clc
 %% Ucitavanje slike
 [file, folder] = uigetfile('*.jpg') %Vraca naziv fajla (sa ekstenzijom) i putanju foldera gdje se fajl nalazi
 path = append(folder, file); %Pravimo punu putanju do fajla
-img = imread(path); 
+img = imread(path);
 %% Predprocesiranje
 % Boja nam je nepotrebna, te pretvaramo sliku u monohromatsku
 imgGray = rgb2gray(img);
@@ -17,11 +17,16 @@ imshow(imgGray)
 %Prikazujemo histogram
 figure('name', "Histogram")
 histogram(imgGray)
-
-threshold = 100; %Sva jacina piksela veca od threshold-a nam nije od interesa. Mi samo zelimo slova koja su karakteristicne nijanse
-imgBW = imgGray < threshold;
+%threshold =  100                           TODO: Opcionalni input sa GUIa
+threshold = graythresh(imgGray) %Otsuova metoda za odredjivanje praga binarizacije
+imgBW = imbinarize(imgGray, threshold)
+%if sum(sum(imgBW(imgBW==1))) > size(imgBW,1)*size(imgBW,2)/2 %Posto radimo sa belim karakterima, u slucaju da se slika binarizuje na takav nacin da su karakteri crni, invertujemo je
+if threshold > 0.5
+    imgBW = ~imgBW;
+end
 figure('name',"Crno-bela slika")
 imshow(imgBW)
+
 %% Izbor ROI
 %Region of Interest - biramo je na osnovu cinjenice da ce tekst na tablici
 %biti horizontalan, kao i da na tablicama imamo svijetlu pozadinu i tamni
@@ -36,7 +41,8 @@ ylabel("Koncentracija belih piksela")
 grid on
 hold on
 axis tight
-threshold2 = 110;
+%threshold2 = 110;                           TODO: Opcionalni input sa GUIa
+threshold2 = mean(whiteRows)*0.5 %0.75
 groups = whiteRows > threshold2;
 plot(groups*(max(whiteRows)/2)) %Prikaz regija belih objekata
 legend("Broj belog", "Grupe");
@@ -47,11 +53,17 @@ figure('name', "Prelazi po redovima")
 plot(edges)
 risingEdges = [find(edges == 1)]
 fallingEdges = [find(edges == -1)]
-if risingEdges(1)>fallingEdges(1) %Zastita od belog okvira
+if isempty(risingEdges)
+    risingEdges = 1
+end
+if isempty(fallingEdges)
+    fallingEdges = edges(end)
+end
+if risingEdges(1)>fallingEdges(1) %Zastita od crnog okvira (Da su redovi jednake velicine)
     risingEdges = [1;risingEdges]
-   fallingEdges = [fallingEdges;length(edges)]
-elseif risingEdges(end)>fallingEdges(end)
-    fallingEdges = [fallingEdges; length(edges)]
+end
+if risingEdges(end) > fallingEdges(end)
+    fallingEdges = [fallingEdges;length(edges)]
 end
 width = fallingEdges - risingEdges
 [~, widest] = max(width)
@@ -60,8 +72,11 @@ width = fallingEdges - risingEdges
 ROIStart = risingEdges(widest)
 ROIEnd = fallingEdges(widest)
 
-ROI = imgBW(ROIStart:ROIEnd, :);
+ROI = imgBW(ROIStart:ROIEnd, :); 
+if sum(sum(ROI(ROI==1))) > size(ROI,1)*size(ROI,2)/2 %Posto radimo sa belim karakterima, u slucaju da se slika binarizuje na takav nacin da su karakteri crni, invertujemo je
 
+    ROI=~ROI;
+end
 figure('name',"Regija od interesovanja")
 imshow(ROI)
 %% Trazenje karaktera
@@ -75,100 +90,146 @@ xlabel('Kolona')
 ylabel('Koncentracija belih piksela')
 %%
 %Trazimo individualnih karaktera
-thresholdCharacter = 5
+%thresholdCharacter = 5                     TODO: Opcionalni input sa GUIa
+thresholdCharacter = mean(whiteColumns)*0.2
 groups = whiteColumns > thresholdCharacter
 figure('name', "Koncentracija belog po kolonama")
 plot(whiteColumns/(max(whiteColumns)))
 hold on
-plot(0.5*groups/max(groups));
+plot(0.5*groups);
 legend("Koncentracija belog", "Grupe");
-%% AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa
-%Prvi prelaz
+%% Prvi prelaz
 edges =  diff(groups)
 figure('name', "Prelaz po kolonama")
 plot(edges)
-risingEdges = [1 find(edges == 1)]
-fallingEdges = [find(edges == -1) length(edges)]
+risingEdges = find(edges == 1)
+fallingEdges = find(edges == -1)
 
-if risingEdges(1)>fallingEdges(1) %Zastita od belog okvira
-    risingEdges = [1;risingEdges]
-   fallingEdges = [fallingEdges;length(edges)]
-elseif risingEdges(end)>fallingEdges(end)
-    fallingEdges = [fallingEdges; length(edges)]
+if isempty(risingEdges)
+    risingEdges = 1
+end
+if isempty(fallingEdges)
+    fallingEdges = edges(end)
 end
 
+if risingEdges(1)>fallingEdges(1) %Zastita od crnog okvira
+    risingEdges = [1 risingEdges]
+end
+if risingEdges(end) > fallingEdges(end)
+    fallingEdges = [fallingEdges length(edges)]
+end
 groups  = fallingEdges - risingEdges
 avgWidth = mean(groups)
 
-undesirables = groups(groups < avgWidth)
+%Za debugging
+%undesirables = groups(groups < avgWidth) %Sve grupe koje su znatno manje od prosjecne sirine grupe su najverovatnije artefakti
+%Razlog za podesavanje je problem uskih karaktera u odredjenim fontovima
+%(slovo I i broj 1), Ali u standardizovanim fontovima tablica, ovo ne bi
+%bio problem
 
-
-figure('name', "Koncentracija belog po kolonama")
-plot(whiteColumns/(max(whiteColumns)))
-hold on
-plot(0.5*groups/max(groups));
-legend("Koncentracija belog", "Grupe");
-%%
-%{
-%Drugi prelaz
-groups = groups(groups > avgWidth*0.75)
-risingEdges = risingEdges(groups > avgWidth*0.75)
-fallingEdges = fallingEdges(groups > avgWidth*0.75)
-figure('name', "Drugi prelaz po kolonama")
-groups  = fallingEdges - risingEdges
-%Slova su uniformna po standardima za fontove koji se koriste za registracijske tablice
-%Imajuci to u vidu, odbacujemo abnormalne sirine jer su to sumovi,
-%nepoznati karakteri ili prosto ivice tablice
-%width = width(width< avgWidth+(avgWidth/4) & width > avgWidth-(avgWidth/4))
-
-figure('name', "Koncentracija belog po kolonama")
-plot(whiteColumns/(max(whiteColumns)))
-hold on
-plot(0.5*groups/max(groups));
-legend("Koncentracija belog", "Grupe");
-%}
 %% Ucitavanje sablona karaktera
 %Da bi prepoznali karaktere, moramo da imamo reference, tj. sablon-slike (templates) kako ti sami karakteri izgledaju
 %Ucitavamo sablone iz foldera "templates" sadrzanog u direktorijimu
 %aplikacije
-templateDir = fullfile(pwd, 'templates');
-templates = dir(fullfile(templateDir, "*.png"));
+templateDir = fullfile(pwd, 'templates'); %Ucitavamo sablone iz foldera templates
+templates = dir(fullfile(templateDir, "*.png")); %TODO: Prosiriti broj sablona
 figure('name',"Prikaz sablona")
-candidateImg =  cell(length(templates),2);
+candidateImg =  cell(length(templates),2); %Sablon
 for i = 1:length(templates)
-    subplot(6,7,i)
+    subplot(round(sqrt(length(templates)))+1,round(sqrt(length(templates))),i) %Za grid prikaz svih sablona
     [~, fileName] = fileparts(templates(i).name);
     candidateImg{i,1} = fileName;
-    candidateImg{i,2} = imread(fullfile(templates(i).folder, templates(i).name));
+    candidateImg{i,2} = imresize(im2bw(imread(fullfile(templates(i).folder, templates(i).name))), [40 20]);
     imshow(candidateImg{i,2})
 end
 
 %%
 %Prikaz prvog karaktera i sablona
 
-letterImg = ROI(:,risingEdges(2):fallingEdges(2));
-figure('name',"Izdvojeno prvo slovo");
-imshow(letterImg)
+%if size(risingEdges)>1 & size(fallingEdges)>2 
+ %   letterImg = ROI(:,risingEdges(2):fallingEdges(3));
+%else
+    letterImg = ROI(:, risingEdges(1):fallingEdges(1));
+%end
+%% -------------------------------
+%%
+whiteRows = sum(imgBW, 2);
+figure('name',"Koncentracija belog po redovima")
+plot(whiteRows)
+xlabel("Red")
+ylabel("Koncentracija belih piksela")
+grid on
+hold on
+axis tight
+%threshold2 = 110;                           TODO: Opcionalni input sa GUIa
+threshold2 = mean(whiteRows)*0.5 %0.75
+groups = whiteRows > threshold2;
+plot(groups*(max(whiteRows)/2)) %Prikaz regija belih objekata
+legend("Broj belog", "Grupe");
+%%
+% Trazimo najsiru grupu
+edges = diff(groups); %izvod ce nam reci kada funkcija prelazi izmedju crne i bele boje. Tako detektujemo ivice
+figure('name', "Prelazi po redovima")
+plot(edges)
+risingEdges = [find(edges == 1)]
+fallingEdges = [find(edges == -1)]
+if isempty(risingEdges)
+    risingEdges = 1
+end
+if isempty(fallingEdges)
+    fallingEdges = edges(end)
+end
+if risingEdges(1)>fallingEdges(1) %Zastita od crnog okvira (Da su redovi jednake velicine)
+    risingEdges = [1;risingEdges]
+end
+if risingEdges(end) > fallingEdges(end)
+    fallingEdges = [fallingEdges;length(edges)]
+end
+width = fallingEdges - risingEdges
+[~, widest] = max(width)
+%%
+%Secemo sliku tako da nam ostane samo ROI
+ROIStart = risingEdges(widest)
+ROIEnd = fallingEdges(widest)
 
+ROI = imgBW(ROIStart:ROIEnd, :); 
+if sum(sum(ROI(ROI==1))) > size(ROI,1)*size(ROI,2)/2 %Posto radimo sa belim karakterima, u slucaju da se slika binarizuje na takav nacin da su karakteri crni, invertujemo je
+
+    ROI=~ROI;
+end
+figure('name',"Regija od interesovanja")
+imshow(ROI)
+
+%% -------------------------------
+figure('name',"Izdvojen prvi karakter i prvi sablon");
+subplot(1,2,1)
+imshow(letterImg)
+subplot(1,2,2)
+hold on
+title('Karakter', 'fontsize', 15)
 template1 = imread(fullfile(templates(1).folder,templates(1).name));
-figure('name',"Primer sablona")
 imshow(template1)
+hold on
+title('Sablon', 'fontsize', 15)
 %%
 %Kao sto vidimo, velicine su razlicite, i kao takve, ne mozemo da ih
 %uporedjujemo na preciznosti piksela, te je potrebno skalirati ih na iste
 %dimenzije
 letterImg = imresize(letterImg,size(candidateImg{i,2}));
-imshow(letterImg)
-%%
 figure('name', "Rezultat skaliranja")
 subplot(1,2,1)
 imshow(letterImg)
+hold on
+title('Karakter', 'fontsize', 15)
 subplot(1,2,2)
 imshow(template1)
+hold on
+title('Sablon', 'fontsize', 15)
 %% Prepoznavanje karaktera
 %Posto imamo sliku karaktera i sliku sablona svih nama poznatih karaktera
 %mozemo veoma jednostavno da uporedimo sliku karaktera sa svakim sablonom i
-%oduzmemo vrednosti svakog piksela na slici.
+%oduzmemo vrednosti svakog piksela na slici. Time dobijamo razlike izmedju 
+%slike samog karaktera i sablona, te trazimo najmanju razliku.
 difference = zeros(1, length(templates));
 for i = 1:length(templates)
     difference(i) = abs(sum((letterImg - double(candidateImg{i,2})).^2, "all")/numel(candidateImg));
@@ -187,16 +248,12 @@ grid on
 templates(x)
 [~, letter] = fileparts(templates(x).name)
 %% Citanje slova
+%Nalazimo sablon sa najmanjom razlikom
 result = '';
 for i = 1:length(groups)
-    %if groups(i) < avgWidth + avgWidth/4 && groups(i) > avgWidth - avgWidth/4
-    if groups(i) > avgWidth   
-    %Izdvajanje slova
+    if groups(i) > avgWidth * 0.66 %TODO Opcionalni Factor odbacivanja
         letterImg = ROI(:, risingEdges(i):fallingEdges(i));
-        figure('name',"Character #"+i)
-        imshow(letterImg);
         width = fallingEdges(i) - risingEdges(i);
-            %Uporedjivanje sa sablonima
             difference = zeros(1,length(templates));
             for j = 1:length(templates)
                 letterImg = imresize(letterImg, size(candidateImg{j,2}));
@@ -204,12 +261,22 @@ for i = 1:length(groups)
             end
             [d, x] = min(difference);
             letter = candidateImg{x,1};
-            if ~contains(chars, letter) %Ako imamo nepoznate karaktere ili sum, prikazacemo to posebnim simbolom
+            figure('name',"Karakter #"+i+" i najslicniji sablon")
+            subplot(1,2,1)
+            hold on
+            title('Karakter', 'fontsize', 15)
+            imshow(letterImg)
+            subplot(1,2,2)
+            hold on
+            title('Sablon', 'fontsize', 15)
+            imshow(candidateImg{x,2})
+            if ~contains(chars, letter(1)) %Ako imamo nepoznate karaktere ili sum, prikazacemo to posebnim simbolom
                 letter = ".";
             end
-            result(end+1) = letter;
-       % end    
+         result(end+1) = letter(1);   
     end
 end
 %% Procitani tekst:
 result
+disp("Registarska tablica: ")
+result(result~='.')
