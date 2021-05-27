@@ -20,17 +20,17 @@ global candidateImg len areLoaded
                    %recognition and image processing displayed in a
                    %single axes plot with interactable buttons
                    %instead of a bouquet of figure windows
-   if size(img,3) == 1 %check if the image is rbg and if so, make it grayscale
+    stepCell{br, 1} = img; %Contains the image/plot information of the step
+    stepCell{br, 2} = "Starting image with unknown characters"; %textual explanation of the step
+    stepCell{br, 3} = 0; %special flag indicating that a more complex visualisation/plot is required
+                         %Depending on the value of the third cell,
+                         %the rest of the array will contain
+                         %different data
+   if size(img,3) == 1 %if the image is already grayscale, all is right with the world
        imgGray = img;
-   else
+   else %if not, make it gray
         try
             imgGray = rgb2gray(img);
-            stepCell{br, 1} = img; %Contains the image/plot information of the step
-            stepCell{br, 2} = "Starting image with unknown characters"; %textual explanation of the step
-            stepCell{br, 3} = 0; %special flag indicating that a more complex visualisation/plot is required
-                                 %Depending on the value of the third cell,
-                                 %the rest of the array will contain
-                                 %different data
             br = br + 1;
             stepCell{br, 1} =  imgGray;
             stepCell{br, 2} = "Since color doesn't play a part in the reading, we discard it by grayscaling the image";
@@ -39,19 +39,29 @@ global candidateImg len areLoaded
             msgbox("Error! Couldn't grayscale image! Stack Trace: " + e.Message);
         end
    end
-    
     %Histogram
+    
+    br = br + 1;
+    stepCell{br,1} = cumtrapz(histcounts(imgGray)); % saves the histogram of the image;
+    stepCell{br,2} = "Cumulative histogram";
+    stepCell{br,3} = 1;
+    stepCell{br,6} = 0;
+    
     threshold = str2num(binT); %input from gui
     if threshold == -1 %-1 is a flag-value indicating that the user wants to use automatic binarisation
-        threshold = graythresh(imgGray) %Otsu's binarisation method
+        threshold = graythresh(imgGray); %Otsu's binarisation method
     end
-        imgBW = imbinarize(imgGray, threshold)
+        imgBW = imbinarize(imgGray, threshold);
     
     br = br + 1;
     stepCell{br, 1} =  imgBW;
     stepCell{br, 2} = "Binarisation completed with threshold: " + threshold;
     stepCell{br, 3} = 0;
-    if threshold > 0.5
+    if threshold > 0.5 %If the threshold is higher than 0.5 it's most likely
+                        %the case that the letter of interest are black
+                        %so it's ncessary to invert the image. However,
+                        %this doesn't always turn out to be true, so a
+                        %better comparison method is needed.
         imgBW = ~imgBW;
         br = br + 1;
         stepCell{br, 1} =  imgBW;
@@ -70,7 +80,7 @@ global candidateImg len areLoaded
     stepCell{br, 3} = 1;
     stepCell{br, 4} = "Row";
     stepCell{br, 5} = "Amount";
-    threshold2 = mean(whiteRows)*str2num(roiT) %The amount of white pixels will be substantial if the group contains the characters.
+    threshold2 = mean(whiteRows)*str2num(roiT); %The amount of white pixels will be substantial if the group contains the characters.
     groups = whiteRows > threshold2; %therefore, whatever doesn't meet the quota, is most likely unimportant - hence discard it with extreme prejudice
     stepCell{br,6} = 1;
     stepCell{br, 7} = groups*(max(whiteRows)/2);
@@ -86,26 +96,26 @@ global candidateImg len areLoaded
     stepCell{br,4} = "";
     stepCell{br,5} = "";
     stepCell{br,6} = 0;
-    risingEdges = [find(edges == 1)]
-    fallingEdges = [find(edges == -1)]
+    risingEdges = [find(edges == 1)];
+    fallingEdges = [find(edges == -1)];
     if isempty(risingEdges)
-        risingEdges = 1
+        risingEdges = 1;
     end
     if isempty(fallingEdges)
-        fallingEdges = edges(end)
+        fallingEdges = edges(end);
     end
     if risingEdges(1)>fallingEdges(1) %Edge edge case protection :)
-        risingEdges = [1;risingEdges]
+        risingEdges = [1;risingEdges];
     end
     if risingEdges(end) > fallingEdges(end)
-        fallingEdges = [fallingEdges;length(edges)]
+        fallingEdges = [fallingEdges;length(edges)];
     end
-    width = fallingEdges - risingEdges
-    [~, widest] = max(width)
+    width = fallingEdges - risingEdges;
+    [~, widest] = max(width);
     %%
     %Keep the ROI, discard the rest
-    ROIStart = risingEdges(widest)
-    ROIEnd = fallingEdges(widest)
+    ROIStart = risingEdges(widest);
+    ROIEnd = fallingEdges(widest);
 
     ROI = imgBW(ROIStart:ROIEnd, :); 
     %if sum(sum(ROI(ROI==1))) > size(ROI,1)*size(ROI,2)/2
@@ -127,8 +137,8 @@ global candidateImg len areLoaded
     stepCell{br,3} = 2;
     stepCell{br,4} = max(whiteColumns) - whiteColumns, 'r';
     %%
-    thresholdCharacter = mean(whiteColumns) * str2num(charT) %Same reasoning as for ROI
-    groups = whiteColumns > thresholdCharacter
+    thresholdCharacter = mean(whiteColumns) * str2num(charT); %Same reasoning as for ROI
+    groups = whiteColumns > thresholdCharacter;
     br = br + 1;
     stepCell{br,1} = whiteColumns/(max(whiteColumns));
     stepCell{br,2} = ""
@@ -140,31 +150,32 @@ global candidateImg len areLoaded
     stepCell{br,8} = "White count";
     stepCell{br,9} = "Groups";
     
-    edges = diff(groups)
+    edges = diff(groups);
     br = br + 1;
     stepCell{br,1} = edges;
     stepCell{br,2} = "Character edges";
     stepCell{br,3} = 1;
-    stepCell{br,4}
+    stepCell{br,4} = "";
+    stepCell{br,5} = "";
     stepCell{br,6} = 0;
-    risingEdges = find(edges == 1)
-    fallingEdges = find(edges == -1)
+    risingEdges = find(edges == 1);
+    fallingEdges = find(edges == -1);
 
     if isempty(risingEdges)
-        risingEdges = 1
+        risingEdges = 1;
     end
     if isempty(fallingEdges)
-        fallingEdges = edges(end)
+        fallingEdges = edges(end);
     end
 
     if risingEdges(1)>fallingEdges(1)
-        risingEdges = [1 risingEdges]
+        risingEdges = [1 risingEdges];
     end
     if risingEdges(end) > fallingEdges(end)
-        fallingEdges = [fallingEdges length(edges)]
+        fallingEdges = [fallingEdges length(edges)];
     end
-    groups  = fallingEdges - risingEdges
-    avgWidth = mean(groups)
+    groups  = fallingEdges - risingEdges;
+    avgWidth = mean(groups);
 
     %%
     %First character and template showcase
@@ -198,8 +209,8 @@ global candidateImg len areLoaded
         %The minimal difference indicates the most likely character,
         %therefore we bag it
         [d, x] = min(difference);
-        candidateImg{x,1}
-        [~, letter] = fileparts(candidateImg{x,1})
+        candidateImg{x,1};
+        [~, letter] = fileparts(candidateImg{x,1});
         
         %Now let's actually do it for all of the characters, not just the
         %first one
@@ -227,7 +238,7 @@ global candidateImg len areLoaded
             end
         end
         %% Display the recognized text
-        retVal
+        %retVal;
     catch e
             retVal = "[No Text Found!]"
             stepCell = {};
@@ -249,7 +260,7 @@ areLoaded = 0;
 try
     templateDir = fullfile(pwd, 'templates');
     templates = dir(fullfile(templateDir, "*.png"));
-    len = length(templates)
+    len = length(templates);
     w = waitbar(0, 'Loading templates...'); %template loading takes time, so it's nice to have a fancy
                                             %progress bar to aleviate your
                                             %boredom
@@ -265,5 +276,4 @@ areLoaded = 1;
 catch e
     msgbox("Error loading templates! Template files might be missing! Stack trace: " + newline + e.message);
 end
-
 end

@@ -190,31 +190,38 @@ function pushbutton_Read_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global stepCells img br imgLoaded
-if imgLoaded == 1
-    handles.text_Working.String = "PLEASE WAIT";
-    guidata(hObject, handles);
+br = 0;
+set(handles.pushbutton_Next, 'visible', 'off');
+set(handles.pushbutton_Prev, 'visible', 'off');
+try
+    if imgLoaded == 1
+        handles.text_Working.String = "PLEASE WAIT";
+        guidata(hObject, handles);
 
-    if handles.checkbox_autoBin.Value
-        threshold = "-1"
-    else
-        threshold = handles.edit_BinT.String
-    end
-    %imshow(img)
-    [retVal, steps] = readFromImage(img, threshold, handles.edit_RoiT.String, handles.edit_CharT.String, handles.edit_UndesirableT.String);    
-    stepCells = steps;
-    axes(handles.axes_Result);
-    cla(handles.axes_Result, 'reset');
-    imshow(stepCells{1,1});
-    handles.text_Explanation.String = stepCells{1,2};
-    br = 1;
-    set(handles.pushbutton_Next, 'visible', 'on');
-    set(handles.text_Explanation, 'visible', 'on');
-    handles.text_Result.String = retVal;
-    handles.text_Working.String = "";
-    guidata(hObject, handles);
+        if handles.checkbox_autoBin.Value
+            threshold = "-1"
+        else
+            threshold = handles.edit_BinT.String
+        end
+        %imshow(img)
+        [retVal, steps] = readFromImage(img, threshold, handles.edit_RoiT.String, handles.edit_CharT.String, handles.edit_UndesirableT.String);    
+        stepCells = steps;
+        axes(handles.axes_Result);
+        cla(handles.axes_Result, 'reset');
+        imshow(stepCells{1,1});
+        handles.text_Explanation.String = stepCells{1,2};
+        br = 1;
+        set(handles.pushbutton_Next, 'visible', 'on');
+        set(handles.text_Explanation, 'visible', 'on');
+        handles.text_Result.String = retVal;
+        handles.text_Working.String = "";
+        guidata(hObject, handles);
 else
     msgbox("No image loaded! Load an image first!");
-end
+    end
+catch e
+    msgbox("Error reading image! Stack Trace: " + e.message);
+end    
 % --- Executes when selected object is changed in uibuttongroup_Modification.
 function uibuttongroup_Modification_SelectionChangedFcn(hObject, eventdata, handles)
 % hObject    handle to the selected object in uibuttongroup_Modification 
@@ -230,8 +237,6 @@ if switchTag == "radiobutton_Sharpen"
         set(handles.text_Param1,'visible','off');
         set(handles.edit_Param2,'visible','off');
         set(handles.text_Param2,'visible','off');
-        set(handles.edit_Param3,'visible','off');
-        set(handles.text_Param3,'visible','off');
      set(handles.text_Gray, 'visible', 'off');
     elseif switchTag == "radiobutton_Contrast" || switchTag == "radiobutton_Snp" || switchTag == "radiobutton_Gaussian"
         set(handles.edit_Passes, 'visible','off');
@@ -240,8 +245,6 @@ if switchTag == "radiobutton_Sharpen"
         set(handles.text_Param1,'visible','off');
         set(handles.edit_Param2,'visible','off');
         set(handles.text_Param2,'visible','off');
-        set(handles.edit_Param3,'visible','off');
-        set(handles.text_Param3,'visible','off');
         set(handles.text_Gray, 'visible', 'off');
     else
         set(handles.edit_Passes, 'visible','on');
@@ -255,8 +258,6 @@ if switchTag == "radiobutton_Sharpen"
         set(handles.edit_Param2,'visible','on');
         set(handles.text_Param2,'string', "Mask height");
         set(handles.text_Param2,'visible','on');
-        set(handles.edit_Param3,'visible','off');
-        set(handles.text_Param3,'visible','off');
        set(handles.text_Gray, 'visible', 'on');
 end
 
@@ -433,8 +434,8 @@ global stepCells br
 if br < size(stepCells,1)
     cla(handles.axes_Result, 'reset');
     set(handles.pushbutton_Prev, 'visible', 'on');
-    axes(handles.axes_Result);
     br = br + 1;
+    axes(handles.axes_Result)
     if stepCells{br,3} == 1
         plot(stepCells{br,1});
         axis tight;
@@ -453,6 +454,7 @@ if br < size(stepCells,1)
         legend("White count by column");
     elseif stepCells{br,3} == 4
         plot(stepCells{br,1});
+        axis tight;
         xticklabels(stepCells{br,4});
         xticks(1:length(stepCells{br,4}));
         xlim([1 length(stepCells{br,4})]);
