@@ -1,5 +1,5 @@
 # MATLABCharacterRecognition
-A MATLAB Guide application for Optical Character Recognition using Euclidean distance metric no neural networks.
+A MATLAB Guide application for Optical Character Recognition using Euclidean distance metric and no neural networks.
 Allows users to load an image, crop it, remove noise via median and wiener filters,
 improve sharpness and contrast, binarize it, add gaussian or impulse noise, and set up the OCR and ROI detection parameters.
 All the steps leading to the resulting recognized text are visible in an easy to use iterative slideshow within the GUI itself.
